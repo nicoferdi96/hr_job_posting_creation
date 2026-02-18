@@ -183,6 +183,10 @@ class HrJobCreationFlow(Flow[FlowState]):
 
         === USER FEEDBACK TO IMPLEMENTATION ===
         {self.state.feedback}
+        
+        Your task is to incorporate the feedback of the user and return the same job posting, in a markdown format,
+        with the feedback incorporated. The feedback may vary but it will always be related with changes to the 
+        job posting such as the removal or modification of sections, additional research on certain sections, etc.
 
         === INSTRUCTIONS ===
         - Make ONLY the changes requested in the feedback

@@ -1,4 +1,4 @@
-from src.hr_job_creation.main import DeepResearchFlow
+from src.hr_job_creation.main import HrJobCreationFlow
 from colorama import Fore, Style
 import uuid
 
@@ -12,7 +12,7 @@ while True:
         break
 
     # Create flow instance
-    chat_flow = DeepResearchFlow()
+    chat_flow = HrJobCreationFlow()
     
     # Prepare inputs - create new ID if this is first interaction
     inputs = {
