@@ -1,283 +1,281 @@
-# CrewAI Flow Workshop - Intelligent Research & Conversation System
+# HR Job Creation Flow
 
-This project demonstrates an advanced AI system built with [CrewAI Flow](https://crewai.com) that intelligently routes between research and conversation modes. The system can conduct comprehensive academic research using multiple databases and maintain natural conversations with users.
+An AI-powered job posting assistant built with [CrewAI Flows](https://docs.crewai.com/en/concepts/flows). It collects role details conversationally, researches the market and relevant AI skills in parallel, then generates a polished, company-tailored job posting — all orchestrated through a stateful, persistent flow.
 
-## Project Overview
+## How It Works
 
-This is an **intelligent routing system** that:
+The flow accepts a user message and routes it to one of three paths based on intent:
 
-1. **Analyzes user intent** - Determines whether a message needs research or conversation
-2. **Conducts deep research** - Searches academic databases (arXiv, Nature, IEEE, PubMed) for scholarly papers
-3. **Maintains conversations** - Provides natural, contextual responses for non-research queries
-4. **Preserves context** - Tracks conversation history across interactions
-
-### Key Features
-
-- **Smart Intent Routing**: Automatically classifies user messages as research or conversation
-- **Academic Research**: Searches multiple scholarly databases with proper citations
-- **Conversation Memory**: Maintains message history throughout the session
-- **Custom Tools**: Integrated deep research capabilities via Firecrawl API
-- **Flow Orchestration**: Uses CrewAI Flow for complex multi-agent workflows
-
-## Getting Started from Scratch
-
-### 1. Install CrewAI
-
-First, install CrewAI globally:
-
-```bash
-pip install crewai[tools]
+```
+User message
+     │
+     ▼
+┌──────────┐
+│  Router   │  ← Structured LLM output (RouterIntent)
+└────┬─────┘
+     │
+     ├── "conversation"  →  Collect missing info (job_role, location, company_name)
+     │                      and reply naturally
+     │
+     ├── "job_creation"  →  Kick off HrCrew (3 agents research & write in parallel)
+     │                      and return the finished posting
+     │
+     └── "refinement"    →  A standalone editor agent applies targeted changes
+                            to the existing posting
 ```
 
-### 2. Create a New Flow Project
+1. **Conversation** — If any of the three required fields (`job_role`, `location`, `company_name`) are missing, the router returns `"conversation"` and the LLM generates a friendly reply asking for the missing details.
+2. **Job Creation** — Once all three fields are collected, the `HrCrew` kicks off. Two research agents (market research + AI skills) run in parallel, then a writer agent synthesizes everything into a complete job posting.
+3. **Refinement** — When a posting already exists and the user gives feedback, a lightweight standalone agent edits the posting without re-running the full crew.
 
-Generate a new CrewAI flow project:
+State is persisted across sessions with `@persist()`, so the conversation can be resumed later.
 
-```bash
-crewai create flow your_flow_name
-cd your_flow_name
-```
+## Architecture Deep-Dive
 
-### 3. Setup Environment
+### Flow Orchestration
 
-Ensure you have Python >=3.10 <3.14 installed. This project uses [UV](https://docs.astral.sh/uv/) for dependency management.
+The `HrJobCreationFlow` class uses CrewAI's [Flow](https://docs.crewai.com/en/concepts/flows) decorators to define the execution graph:
 
-Install UV if you haven't already:
-
-```bash
-pip install uv
-```
-
-Install project dependencies:
-
-```bash
-crewai install
-```
-
-### 4. Configure API Keys
-
-Create a `.env` file in your project root and add your API keys:
-
-```bash
-OPENAI_API_KEY=your_openai_api_key_here
-FIRECRAWL_API_KEY=your_firecrawl_api_key_here
-```
-
-**Required API Keys:**
-- **OpenAI API Key**: For LLM functionality and intent routing
-- **Firecrawl API Key**: For academic research and paper searching
-
-## Understanding the System Architecture
-
-### Flow Structure
-
-The main flow (`DeepResearchFlow`) uses CrewAI's `@persist()` decorator and orchestrates these key components:
-
-#### Core Data Models
-- **`Message`**: Tracks role, content, and timestamp for conversation history
-- **`RouterIntent`**: Structures LLM routing decisions with intent classification and research query generation
-- **`Source`**: Represents research sources with URL, title, and relevant content
-- **`SearchResult`**: Contains comprehensive research summary with inline citations and source list
-- **`FlowState`**: Maintains user message, conversation history, research queries, and results
-
-#### Flow Methods
-
-1. **Starting Flow** (`@start() starting_flow`)
-   - Initializes the flow with user message
-   - Adds user message to conversation history
-   - Triggers the routing process
-
-2. **Intent Router** (`@router(starting_flow) routing_intent`)
-   - Uses GPT-4.1 mini with `response_format=RouterIntent` for structured output
-   - Analyzes user messages and conversation history
-   - Classifies intent as "research" or "conversation" using detailed criteria
-   - Generates optimized research queries when research intent is detected
-   - Returns routing decision for flow orchestration
-
-3. **Research Handler** (`@listen("research") handle_research`)
-   - Creates specialized `Deep Research Specialist` agent
-   - Uses `DeepResearchPaper()` tool for academic database searches
-   - Executes research with `response_format=SearchResult` for structured output
-   - Requires comprehensive summaries with inline URL citations: `(https://example.com/source)`
-   - Returns complete research results with sources list
-
-4. **Conversation Handler** (`@listen("conversation") follow_up_conversation`)
-   - Uses GPT-4.1 mini with higher temperature (0.7) for natural responses
-   - Maintains conversation context and flow
-   - Provides helpful responses while guiding toward research opportunities
-   - Adds assistant responses to message history
-
-### Custom Tools
-
-- **DeepResearchPaper**: Searches academic databases and returns exactly 5 research papers with full content and proper citations
-
-## Technical Implementation Details
-
-### Key Implementation Features
-
-#### Structured LLM Responses
-- **RouterIntent**: Uses Pydantic models for structured LLM responses with `user_intent`, `research_query`, and `reasoning` fields
-- **SearchResult**: Enforces structured research output with `research_summary` and `sources_list` fields
-- **Response Format Validation**: All LLM calls use `response_format` parameter for type-safe outputs
-
-#### Flow Decorators & Orchestration
-- **`@persist()`**: Enables flow state persistence across sessions
-- **`@start()`**: Marks the entry point method (`starting_flow`)
-- **`@router()`**: Creates conditional routing based on LLM decisions
-- **`@listen()`**: Defines event-driven handlers for "research" and "conversation" intents
-
-#### Conversation Management
-- **Message History**: Persistent tracking using `List[Message]` with role, content, and timestamp
-- **Context Awareness**: All LLM prompts include conversation history for context-aware responses
-- **State Management**: Centralized state handling through `FlowState` class
-
-#### LLM Configuration
-- **Router LLM**: GPT-4.1 mini with temperature=0.1 for consistent routing decisions
-- **Conversation LLM**: GPT-4.1 mini with temperature=0.7 for natural, varied responses
-- **Research Agent**: Specialized agent with verbose=True for detailed research execution
-
-#### Research Output Requirements
-- **Inline Citations**: Every fact must be followed by source URL in parentheses format: `(URL)`
-- **Comprehensive Summaries**: Organized by topics/themes with cohesive narrative structure
-- **Source Documentation**: Complete source list with URL, title, and relevant content
-
-## Installation & Setup
-
-Ensure you have Python >=3.10 <3.14 installed on your system.
-
-1. Clone this repository or use it as a template
-2. Install dependencies:
-
-```bash
-crewai install
-```
-
-3. Configure your `.env` file with required API keys
-4. Run the system:
-
-```bash
-crewai run
-```
-
-## Customization Guide
-
-### Modifying from the Base Template
-
-Starting from a fresh CrewAI flow, here's how to adapt it for this research system:
-
-1. **Update Flow State** (`FlowState` class):
-   - Add message history tracking
-   - Include research query handling
-   - Add intent classification fields
-
-2. **Implement Intent Routing**:
-   - Create router method with LLM classification
-   - Define research vs conversation criteria
-   - Add proper prompt engineering
-
-3. **Add Research Capabilities**:
-   - Integrate research tools (Firecrawl API)
-   - Create specialized research agent
-   - Implement structured output formatting
-
-4. **Build Conversation System**:
-   - Add conversation handler
-   - Implement context awareness
-   - Include message history management
-
-### Configuration Files
-
-- **`src/crewai_flow_workshop1/main.py`**: Main flow logic and orchestration
-- **`src/crewai_flow_workshop1/tools/deep_research_paper.py`**: Research tool implementation
-- **`pyproject.toml`**: Project configuration and dependencies
-
-### Core Dependencies & Imports
-
-The main.py implementation relies on these key imports:
+- **`@start()`** — `starting_flow()` adds the user message to history and kicks off routing.
+- **`@router(starting_flow)`** — `routing_intent()` returns one of three string literals (`"job_creation"`, `"conversation"`, `"refinement"`) that determine the next step.
+- **`@listen("conversation" | "job_creation" | "refinement")`** — Three listener methods each handle their respective path.
 
 ```python
-from crewai.flow import Flow, listen, start, router, persist
-from pydantic import BaseModel, Field
-from typing import Literal, List, Optional
-from datetime import datetime
-from crewai import LLM, Agent
-import json
+# main.py — simplified flow skeleton
+@persist()
+class HrJobCreationFlow(Flow[FlowState]):
+    @start()
+    def starting_flow(self): ...
+
+    @router(starting_flow)
+    def routing_intent(self): ...      # returns "conversation" | "job_creation" | "refinement"
+
+    @listen("conversation")
+    def follow_up_conversation(self): ...
+
+    @listen("job_creation")
+    def handle_job_creation(self): ...
+
+    @listen("refinement")
+    def handle_refinement(self): ...
 ```
 
-#### Key Features Used:
-- **CrewAI Flow**: `Flow`, `@listen`, `@start`, `@router`, `@persist` decorators
-- **Pydantic Models**: Type-safe data structures with `BaseModel` and `Field`
-- **Type Hints**: `Literal`, `List`, `Optional` for strict typing
-- **LLM Integration**: Direct `LLM` class usage with structured responses
-- **Agent Creation**: Dynamic agent creation with specialized roles and tools
+### Structured State with Pydantic
 
-## Running the Project
+The flow's state is a [Pydantic `BaseModel`](https://docs.crewai.com/en/guides/flows/mastering-flow-state) that tracks everything across turns:
 
-Execute the flow from the project root:
+| Field | Type | Purpose |
+|-------|------|---------|
+| `user_message` | `str` | Current user input |
+| `message_history` | `List[Message]` | Full conversation log with timestamps |
+| `role_info` | `RoleInfo` | Collected fields: `job_role`, `location`, `company_name` |
+| `job_posting` | `Optional[str]` | The generated (or refined) posting |
+| `feedback` | `Optional[str]` | User's refinement feedback |
+| `answer_message` | `Optional[str]` | Conversational reply from the router |
+
+### Structured LLM Output for Routing
+
+The router uses a `RouterIntent` Pydantic model as the LLM's `response_format`, so the output is parsed and validated automatically — no fragile string matching:
+
+```python
+class RouterIntent(BaseModel):
+    user_intent: Literal["job_creation", "conversation", "refinement"]
+    role_info: Optional[RoleInfo] = Field(default_factory=RoleInfo)
+    feedback: Optional[str] = None
+    answer_message: Optional[str] = None
+    reasoning: str
+```
+
+The LLM is called with `LLM(model="gpt-5-nano", response_format=RouterIntent)`, and the response is a typed `RouterIntent` instance.
+
+### Crew Embedded in a Flow
+
+The `HrCrew` is a standalone `@CrewBase` crew with its own YAML configuration. The flow calls it in one line:
+
+```python
+@listen("job_creation")
+def handle_job_creation(self):
+    crew = HrCrew().crew()
+    result = crew.kickoff(inputs={
+        "job_role": self.state.role_info.job_role,
+        "location": self.state.role_info.location,
+        "company_name": self.state.role_info.company_name,
+    })
+    self.state.job_posting = result.raw
+```
+
+### Async Parallel Research
+
+Inside `HrCrew`, the two research tasks use `async_execution=True` so they run concurrently. The writing task depends on both via `context=[...]`, creating a fan-out/fan-in pattern:
+
+```
+job_market_research_task ──┐
+  (async_execution=True)   ├──→ job_posting_creation_task
+ai_skills_research_task ───┘       (waits for both)
+  (async_execution=True)
+```
+
+### Standalone Agent for Refinement
+
+Refinement doesn't need a full crew — it's a single task. The flow creates an `Agent` directly and calls `agent.kickoff(prompt)`:
+
+```python
+@listen("refinement")
+def handle_refinement(self):
+    agent = Agent(
+        role="Senior Job Posting Editor",
+        goal="Refine and improve job postings based on specific feedback",
+        backstory="...",
+        tools=[FirecrawlSearchTool()],
+        llm=self.llm,
+    )
+    result = agent.kickoff(prompt)
+    self.state.job_posting = result.raw
+```
+
+This is intentionally lightweight — no YAML config, no crew overhead.
+
+### YAML-First Agent & Task Config
+
+Agents and tasks for the `HrCrew` are defined in YAML, not Python. The Python crew class just wires them together:
+
+**`config/agents.yaml`** defines three agents:
+- `job_market_researcher` — searches for real job postings and extracts market patterns
+- `ai_skills_researcher` — identifies relevant AI tools and competencies for the role
+- `job_posting_writer` — researches the company and synthesizes everything into a posting
+
+**`config/tasks.yaml`** defines three tasks with `{job_role}`, `{location}`, and `{company_name}` interpolation variables.
+
+### State Persistence
+
+The `@persist()` decorator on the flow class saves state between sessions, so a conversation can be resumed across multiple runs.
+
+## Project Structure
+
+```
+hr_job_creation/
+├── pyproject.toml                          # Dependencies, entry points, crewai config
+├── .env                                    # API keys (OPENAI_API_KEY, FIRECRAWL_API_KEY)
+├── README.md
+└── src/
+    └── hr_job_creation/
+        ├── __init__.py
+        ├── main.py                         # Flow orchestration, state models, router
+        ├── crews/
+        │   └── hr_crew/
+        │       ├── __init__.py
+        │       ├── hr_crew.py              # @CrewBase crew with 3 agents, 3 tasks
+        │       └── config/
+        │           ├── agents.yaml         # Agent roles, goals, backstories
+        │           └── tasks.yaml          # Task descriptions, expected outputs
+        └── tools/
+            ├── __init__.py
+            └── custom_tool.py              # Custom tool template (placeholder)
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Python >= 3.10, < 3.14
+- [uv](https://docs.astral.sh/uv/) for dependency management
+- An OpenAI API key
+- A [Firecrawl](https://www.firecrawl.dev/) API key
+
+### Install
+
+```bash
+# Install uv if you haven't already
+pip install uv
+
+# Install project dependencies
+crewai install
+# or
+uv sync
+```
+
+### Environment Setup
+
+Copy the example env file and fill in your keys:
+
+```bash
+cp .env.example .env
+```
+
+```env
+OPENAI_API_KEY=your_key_here
+FIRECRAWL_API_KEY=your_key_here
+```
+
+### Run
 
 ```bash
 crewai run
 ```
 
-The system will:
-1. Start with the default message: "help me researching on the latest trends in ai"
-2. Add the user message to conversation history with timestamp
-3. Route the message through GPT-4.1 mini intent classification
-4. Either conduct deep research (with academic database search) or provide conversational response
-5. Maintain persistent message history for context across interactions
+The default state starts with: *"HI, create a job posting for a data engineer based in NYC for Johnson & Johnson"* — which has all three fields populated, so it routes straight to job creation.
 
-### Utility Functions
+You can also visualize the flow graph:
 
-The main.py file also includes utility functions:
+```bash
+crewai flow plot
+```
 
-- **`kickoff()`**: Initializes and runs the `DeepResearchFlow` with tracing enabled
-- **`plot()`**: Generates a visual representation of the flow structure  
-- **Direct execution**: Running `python main.py` calls `kickoff()` for immediate flow execution
+## Configuration
+
+### Changing the LLM Model
+
+The router and refinement agent use `gpt-5-nano` by default, set in `main.py`:
+
+```python
+class HrJobCreationFlow(Flow[FlowState]):
+    llm = LLM(model="gpt-5-nano")
+```
+
+Change the model string to use a different provider or model.
+
+### Modifying Agents & Tasks
+
+Edit the YAML files to change agent behavior without touching Python:
+
+- **`src/hr_job_creation/crews/hr_crew/config/agents.yaml`** — Adjust roles, goals, and backstories
+- **`src/hr_job_creation/crews/hr_crew/config/tasks.yaml`** — Change task descriptions, expected outputs, or add new sections to the posting
+
+Variables like `{job_role}`, `{location}`, and `{company_name}` are interpolated from the flow state at kickoff time.
+
+### Adding a New Crew
+
+1. Create a new directory under `src/hr_job_creation/crews/`
+2. Add `config/agents.yaml` and `config/tasks.yaml`
+3. Create a `@CrewBase` crew class
+4. Call it from a flow listener in `main.py` via `YourCrew().crew().kickoff(inputs={...})`
 
 ## Example Usage
 
-### Research Query Example
 ```
-User: "What are the latest studies on transformer architectures in 2024?"
-System: → Routes to research → Returns academic papers with citations
+User:  Hi there!
+       → Routes to "conversation"
+Agent: Hello! I'm your HR job creation assistant. I can help you craft
+       a professional job posting. To get started, I'll need:
+       - The job role (e.g., "Software Engineer")
+       - The location (e.g., "Remote", "NYC")
+       - The company name
+       What role are you hiring for?
+
+User:  I need a Marketing Manager posting for Acme Corp
+       → Routes to "conversation" (location still missing)
+Agent: Great — a Marketing Manager at Acme Corp! Where will this role
+       be based?
+
+User:  London
+       → Routes to "job_creation" (all 3 fields collected)
+       → HrCrew kicks off:
+         1. Market researcher finds real Marketing Manager postings in London
+         2. AI skills researcher identifies relevant AI tools for marketing
+         3. Writer researches Acme Corp and produces the full posting
+Agent: [Complete job posting in markdown]
+
+User:  Can you make the tone more casual and add remote flexibility?
+       → Routes to "refinement"
+Agent: [Updated posting with casual tone and remote option added]
 ```
-
-### Conversation Example
-```
-User: "Hello, how does this system work?"
-System: → Routes to conversation → Provides explanation and guidance
-```
-
-### Follow-up Research Example
-```
-Previous: Discussion about AI ethics
-User: "Can you find more studies about bias in machine learning?"
-System: → Routes to research with context → Returns relevant bias studies
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Missing API Keys**: Ensure both `OPENAI_API_KEY` and `FIRECRAWL_API_KEY` are set in your `.env` file
-2. **Python Version**: Verify you're using Python >=3.10 <3.14
-3. **Dependencies**: Run `crewai install` to ensure all packages are properly installed
-4. **Research Timeout**: If research queries timeout, try more specific search terms
-
-### Development Tips
-
-- Use `crewai run` for full execution
-- Check logs for detailed flow execution information
-- Modify the default query in `FlowState` for different starting points
-- Adjust research limits and timeouts in the tool configuration
-
-## Support & Resources
-
-For support, questions, or feedback:
-
-- **CrewAI Documentation**: [docs.crewai.com](https://docs.crewai.com)
-- **CrewAI GitHub**: [github.com/joaomdmoura/crewai](https://github.com/joaomdmoura/crewai)
-- **CrewAI Discord**: [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- **CrewAI Chat**: [Chat with our docs](https://chatg.pt/DWjSBZn)
-
-Let's create intelligent systems together with the power and simplicity of CrewAI Flow!
