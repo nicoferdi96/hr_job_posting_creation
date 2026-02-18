@@ -5,9 +5,11 @@ from typing import List, Literal, Optional
 from crewai import Agent, LLM
 from crewai.flow import Flow, listen, persist, router, start
 from pydantic import BaseModel, Field
-from crewai_tools import FirecrawlSearchTool
+from crewai_tools import (
+    SerperDevTool,
+)
 
-from hr_job_creation.crews.hr_crew.hr_crew import HrCrew
+from hr_job_creation.crews.hr_crew.hr_crew import AiEnhancedJobPostingGeneratorCrew
 
 
 class Message(BaseModel):
@@ -139,12 +141,12 @@ class HrJobCreationFlow(Flow[FlowState]):
     @listen("job_creation")
     def handle_job_creation(self):
 
-        crew = HrCrew().crew()
+        crew = AiEnhancedJobPostingGeneratorCrew().crew()
         result = crew.kickoff(
             inputs={
-                "job_role": self.state.role_info.job_role,
+                "role": self.state.role_info.job_role,
                 "location": self.state.role_info.location,
-                "company_name": self.state.role_info.company_name,
+                "company": self.state.role_info.company_name,
             }
         )
 
@@ -170,7 +172,7 @@ class HrJobCreationFlow(Flow[FlowState]):
                 "based on feedback while preserving the overall quality and "
                 "structure of the posting."
             ),
-            tools=[FirecrawlSearchTool()],
+            tools=[SerperDevTool()],
             llm=self.llm,
             verbose=True,
         )

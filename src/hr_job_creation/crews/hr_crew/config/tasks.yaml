@@ -1,68 +1,66 @@
-job_market_research_task:
-  description: >
-    Search the web for 3-5 real job postings for {job_role} positions in or
-    near {location}. For each posting found, extract:
-    - Required skills and qualifications
-    - Preferred/nice-to-have skills
-    - Years of experience typically required
-    - Salary range (if available)
-    - Common responsibilities and duties
-
-    Synthesize your findings into a summary of market expectations for this role.
-  expected_output: >
-    A structured market research report containing:
-    1. Links to real job postings found
-    2. Common required skills across postings
-    3. Common preferred skills
-    4. Typical experience requirements
-    5. Salary range data (if found)
-    6. Key responsibilities patterns
-  agent: job_market_researcher
-
-ai_skills_research_task:
-  description: >
-    Research AI tools, technologies, and competencies that are specifically
-    relevant to {job_role} professionals. This applies to ALL types of roles,
-    not just tech positions. For example:
-    - A marketing manager should know AI content tools, analytics platforms
-    - A data engineer should know AI/ML pipelines, LLM frameworks
-    - An accountant should know AI-powered audit tools, automation platforms
-
-    Find specific tool names, certifications, and competencies that are
-    trending for this role in the current job market.
-  expected_output: >
-    A structured AI skills report containing:
-    1. Specific AI tools relevant to {job_role} (with tool names)
-    2. AI-related certifications or training that add value
-    3. AI competencies employers are looking for in this role
-    4. How AI is transforming the {job_role} profession
-  agent: ai_skills_researcher
-
-job_posting_creation_task:
-  description: >
-    First, research {company_name} to understand its:
-    - Mission and values
+---
+analyze_job_market_landscape:
+  description: |-
+    Research and analyze the current job market for {role} positions in {location}. Focus on:
+    - Competitive salary ranges and compensation packages
+    - Most commonly required skills and qualifications
+    - Trending requirements and emerging skills
+    - Market demand and hiring patterns
+    - Industry-specific standards and expectations
+    Use comprehensive search strategies to gather data from job boards, company websites, and industry reports.
+  expected_output: A detailed market analysis report containing salary ranges, required
+    skills analysis, trending qualifications, and competitive landscape insights for
+    {role} positions in {location}, formatted as a structured document with key findings
+    and recommendations.
+  agent: market_research_analyst
+research_ai_tools_for_role:
+  description: |-
+    Research and catalog cutting-edge AI tools specifically relevant to {role} positions. Focus on:
+    - Most popular and effective AI tools for this role (like Claude, GitHub Copilot, Cursor, ChatGPT, etc.)
+    - How these tools enhance daily productivity and workflows
+    - Specific use cases and practical applications
+    - Emerging AI tools gaining traction in the field
+    - Integration possibilities and workflow optimization
+    - Productivity metrics and benefits
+    Provide detailed explanations of how each tool adds value to the role.
+  expected_output: A comprehensive AI tools catalog for {role} positions, including
+    tool descriptions, practical use cases, productivity benefits, and specific examples
+    of how each tool enhances daily workflows, organized by categories and impact
+    level.
+  agent: ai_tools_research_specialist
+analyze_company_culture_and_brand:
+  description: |-
+    Conduct deep research into {company}'s culture, values, and communication style to ensure brand alignment. Research:
+    - Company website content, mission, and values
+    - Recent job postings and their tone/style
     - Company culture and work environment
-    - Industry and market position
-    - Any notable benefits or perks
-
-    Then, using the market research and AI skills research provided as context,
-    create a complete, professional job posting in markdown format for a
-    {job_role} position at {company_name} in {location}.
-
-    The job posting must include ALL of the following sections:
-    - Job Title
-    - Company Overview (based on your research of {company_name})
-    - About the Role
-    - Key Responsibilities
-    - Required Qualifications
-    - Preferred Qualifications (including relevant AI skills)
-    - What We Offer / Benefits
-    - Location & Work Arrangement
-    - How to Apply
-  expected_output: >
-    A complete, polished job posting in markdown format that is ready to be
-    published. It should be professional, compelling, and incorporate insights
-    from the market research, AI skills analysis, and company research.
-    The posting should feel authentic to {company_name}'s brand and culture.
-  agent: job_posting_writer
+    - Benefits and perks offered
+    - Communication style and brand voice
+    - Recent news, updates, and company direction
+    - Employee value proposition and what makes them unique
+    Gather information from the company's official website, careers page, and recent job postings.
+  expected_output: A detailed company culture analysis including brand voice guidelines,
+    cultural values, unique selling points, typical benefits packages, communication
+    style preferences, and key messaging that should be reflected in job postings
+    for {company}.
+  agent: company_culture_analyst
+generate_ai_enhanced_job_posting:
+  description: |-
+    Create a comprehensive, compelling job posting in markdown format for the {role} position at {company} in {location}. Using insights from the market research, AI tools analysis, and company culture research, craft a job posting that:
+    - Attracts AI-savvy talent with emphasis on modern tools and technologies
+    - Reflects the company's authentic voice and culture
+    - Includes competitive compensation aligned with market standards
+    - Highlights specific AI tools and their applications
+    - Showcases growth opportunities and impact
+    - Uses professional markdown formatting
+    - Includes practical examples of AI tool usage in daily work
+    - Balances technical requirements with human elements
+  expected_output: A complete, professional job posting in markdown format that emphasizes
+    AI integration, aligns with {company}'s brand voice, includes competitive market
+    insights, and attracts top-tier talent for the {role} position. The posting should
+    be ready for immediate publication.
+  agent: ai_enhanced_job_posting_creator
+  context:
+  - analyze_job_market_landscape
+  - research_ai_tools_for_role
+  - analyze_company_culture_and_brand
