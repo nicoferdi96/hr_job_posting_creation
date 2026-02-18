@@ -1,4 +1,4 @@
-from src.crewai_flow_workshop1.main import DeepResearchFlow
+from src.hr_job_creation.main import DeepResearchFlow
 from colorama import Fore, Style
 import uuid
 

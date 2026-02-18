@@ -1,7 +1,7 @@
 [project]
-name = "crewai_flow_workshop1"
+name = "hr_job_creation"
 version = "0.1.0"
-description = "crewai_flow_workshop1 using crewAI"
+description = "hr_job_creation using crewAI"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 requires-python = ">=3.10,<3.14"
 dependencies = [
@@ -12,9 +12,9 @@ dependencies = [
 ]
 
 [project.scripts]
-kickoff = "crewai_flow_workshop1.main:kickoff"
-run_crew = "crewai_flow_workshop1.main:kickoff"
-plot = "crewai_flow_workshop1.main:plot"
+kickoff = "hr_job_creation.main:kickoff"
+run_crew = "hr_job_creation.main:kickoff"
+plot = "hr_job_creation.main:plot"
 
 [build-system]
 requires = ["hatchling"]

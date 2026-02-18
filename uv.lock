@@ -522,25 +522,6 @@ tools = [
 ]
 
 [[package]]
-name = "crewai-flow-workshop1"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "colorama" },
-    { name = "crewai", extra = ["tools"] },
-    { name = "firecrawl-py" },
-    { name = "requests" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "colorama", specifier = ">=0.4.6" },
-    { name = "crewai", extras = ["tools"], specifier = "==1.9.3" },
-    { name = "firecrawl-py", specifier = ">=4.15.0" },
-    { name = "requests", specifier = ">=2.32.5" },
-]
-
-[[package]]
 name = "crewai-tools"
 version = "1.9.3"
 source = { registry = "https://pypi.org/simple" }
@@ -944,6 +925,25 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6c/3c/28cc4db153a7601a996985bcb564f7b8f5b9e1a706c7537aad4b4809f358/hf_xet-1.1.9-cp37-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:ad1022e9a998e784c97b2173965d07fe33ee26e4594770b7785a8cc8f922cd95", size = 3251429, upload-time = "2025-08-27T23:05:16.471Z" },
     { url = "https://files.pythonhosted.org/packages/84/17/7caf27a1d101bfcb05be85850d4aa0a265b2e1acc2d4d52a48026ef1d299/hf_xet-1.1.9-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:86754c2d6d5afb11b0a435e6e18911a4199262fe77553f8c50d75e21242193ea", size = 3354643, upload-time = "2025-08-27T23:05:17.828Z" },
     { url = "https://files.pythonhosted.org/packages/cd/50/0c39c9eed3411deadcc98749a6699d871b822473f55fe472fad7c01ec588/hf_xet-1.1.9-cp37-abi3-win_amd64.whl", hash = "sha256:5aad3933de6b725d61d51034e04174ed1dce7a57c63d530df0014dea15a40127", size = 2804797, upload-time = "2025-08-27T23:05:20.77Z" },
+]
+
+[[package]]
+name = "hr-job-creation"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "colorama" },
+    { name = "crewai", extra = ["tools"] },
+    { name = "firecrawl-py" },
+    { name = "requests" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "colorama", specifier = ">=0.4.6" },
+    { name = "crewai", extras = ["tools"], specifier = "==1.9.3" },
+    { name = "firecrawl-py", specifier = ">=4.15.0" },
+    { name = "requests", specifier = ">=2.32.5" },
 ]
 
 [[package]]
